@@ -31,6 +31,7 @@ export interface Attachment {
   mimeType: string
   data: string // Base64 编码的文件内容
   size?: number
+  id?: string // 用于跟踪上传进度
 }
 
 export interface GeminiModel {
