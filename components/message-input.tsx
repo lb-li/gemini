@@ -172,7 +172,9 @@ export function MessageInput() {
 
       // 调用 Gemini API 进行流式响应
       const geminiAPI = getGeminiAPI()
-      const stream = geminiAPI.streamGenerateContent(allMessages, currentSession?.model || "gemini-1.5-pro-latest")
+      const stream = geminiAPI.streamGenerateContent(allMessages, {
+        model: currentSession?.model || "gemini-1.5-pro-latest"
+      })
 
       let responseContent = ""
 

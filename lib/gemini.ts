@@ -1,9 +1,9 @@
-import type { 
-  GeminiRequest, 
-  GeminiContent, 
-  ChatMessage, 
-  ApiConfig, 
-  StreamGenerateContentOptions 
+import type {
+  GeminiRequest,
+  GeminiContent,
+  ChatMessage,
+  ApiConfig,
+  StreamGenerateContentOptions
 } from "../types"
 import { StreamResponseParser } from "./stream-parser"
 
@@ -37,7 +37,7 @@ export class GeminiAPI {
   async *streamGenerateContent(
     messages: ChatMessage[],
     options: StreamGenerateContentOptions = {}
-  ): AsyncGenerator<string, void, unknown> {
+  ): any {
     this.abortController = new AbortController()
 
     const contents = this.convertMessagesToContents(messages)
@@ -100,7 +100,7 @@ export class GeminiAPI {
 
         // 尝试解析完整的响应块
         const completeChunks = responseBuffer.extractCompleteChunks()
-        
+
         for (const completeChunk of completeChunks) {
           const textChunks = this.streamParser.parseChunk(completeChunk)
           for (const textChunk of textChunks) {
@@ -196,20 +196,20 @@ class ResponseBuffer {
    */
   extractCompleteChunks(): string[] {
     const chunks: string[] = []
-    
+
     // 按行分割
     const lines = this.buffer.split('\n')
-    
+
     // 保留最后一行（可能不完整）
     this.buffer = lines.pop() || ""
-    
+
     // 返回完整的行
     for (const line of lines) {
       if (line.trim()) {
         chunks.push(line)
       }
     }
-    
+
     return chunks
   }
 

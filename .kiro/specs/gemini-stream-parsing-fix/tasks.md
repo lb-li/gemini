@@ -22,6 +22,8 @@
 
 - [x] 3. Refactor GeminiAPI streamGenerateContent method
 
+
+
   - Update streaming logic to handle JSON array responses
   - Replace line-by-line parsing with proper JSON parsing
   - Implement buffer management for incomplete responses
