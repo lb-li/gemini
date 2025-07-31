@@ -53,10 +53,9 @@ export class GeminiAPI {
       }
     }
 
-    console.log("📤 发送请求到:", url)
-    console.log("📋 请求体:", JSON.stringify(request, null, 2))
-
     const url = `${this.baseUrl}/models/${model}:streamGenerateContent?key=${this.apiKey}`
+
+    console.log("📤 发送流式请求到:", url.split('?')[0])
 
     try {
       const response = await fetch(url, {
