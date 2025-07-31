@@ -75,7 +75,11 @@ type SortOption = 'date' | 'title' | 'model' | 'messages'
 // 视图模式
 type ViewMode = 'table' | 'list' | 'compact'
 
-export function SessionList() {
+interface SessionListProps {
+  collapsed?: boolean
+}
+
+export function SessionList({ collapsed = false }: SessionListProps) {
   const { 
     sessions, 
     currentSessionId, 
@@ -217,51 +221,70 @@ export function SessionList() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-muted/30 border-r">
+    <div className={cn(
+      "flex flex-col h-full bg-muted/30 border-r transition-all duration-300",
+      collapsed && "w-16"
+    )}>
       {/* 头部 */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-lg font-semibold">Gemini AI</h1>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
+      <div className={cn("p-4 border-b", collapsed && "p-2")}>
+        {!collapsed ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-lg font-semibold">Gemini AI</h1>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} aria-label="设置">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Button onClick={handleNewSession} className="w-full" aria-label="新建对话">
+              <Plus className="h-4 w-4 mr-2" />
+              新建对话
+            </Button>
+          </>
+        ) : (
+          <div className="flex flex-col gap-2 items-center">
             <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} aria-label="设置">
               <Settings className="h-4 w-4" />
             </Button>
+            <Button variant="ghost" size="icon" onClick={handleNewSession} aria-label="新建对话">
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
-
-        <Button onClick={handleNewSession} className="w-full" aria-label="新建对话">
-          <Plus className="h-4 w-4 mr-2" />
-          新建对话
-        </Button>
+        )}
       </div>
 
       {/* 统计信息面板 */}
-      <div className="p-4 border-b">
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="p-3">
-            <div className="flex items-center gap-2">
-              <Hash className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <div className="text-lg font-semibold">{sessionStats.total}</div>
-                <div className="text-xs text-muted-foreground">总会话</div>
+      {!collapsed && (
+        <div className="p-4 border-b">
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <Hash className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-lg font-semibold">{sessionStats.total}</div>
+                  <div className="text-xs text-muted-foreground">总会话</div>
+                </div>
               </div>
-            </div>
-          </Card>
-          <Card className="p-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <div className="text-lg font-semibold">{sessionStats.today}</div>
-                <div className="text-xs text-muted-foreground">今日新增</div>
+            </Card>
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-lg font-semibold">{sessionStats.today}</div>
+                  <div className="text-xs text-muted-foreground">今日新增</div>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 搜索和筛选 */}
-      <div className="p-4 border-b space-y-3">
+      {!collapsed && (
+        <div className="p-4 border-b space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -343,12 +366,49 @@ export function SessionList() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* 会话列表 */}
       <ScrollArea className="flex-1 custom-scrollbar">
-        <div className="p-2">
-          {viewMode === 'table' ? (
+        <div className={cn("p-2", collapsed && "p-1")}>
+          {collapsed ? (
+            // 折叠模式 - 只显示图标
+            <div className="space-y-1">
+              <AnimatePresence>
+                {filteredAndSortedSessions.slice(0, 10).map((session) => (
+                  <motion.div
+                    key={session.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Button
+                      variant={currentSessionId === session.id ? "secondary" : "ghost"}
+                      size="icon"
+                      className={cn(
+                        "w-12 h-12 rounded-lg transition-all duration-200",
+                        currentSessionId === session.id && "ring-2 ring-primary/20"
+                      )}
+                      onClick={() => handleSelectSession(session.id)}
+                      title={session.title}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {filteredAndSortedSessions.length > 10 && (
+                <div className="text-center py-2">
+                  <span className="text-xs text-muted-foreground">
+                    +{filteredAndSortedSessions.length - 10}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : viewMode === 'table' ? (
             <Table>
               <TableHeader>
                 <TableRow>

@@ -61,7 +61,12 @@ import { cn } from "@/lib/utils"
 // 排序选项
 type SortOption = 'date' | 'title' | 'model' | 'messages'
 
-export function MobileSessionList() {
+interface MobileSessionListProps {
+  isTablet?: boolean
+  viewMode?: 'compact' | 'comfortable' | 'spacious'
+}
+
+export function MobileSessionList({ isTablet = false, viewMode = 'comfortable' }: MobileSessionListProps) {
   const { 
     sessions, 
     currentSessionId, 
@@ -176,7 +181,14 @@ export function MobileSessionList() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80 p-0">
+            <SheetContent 
+              side="left" 
+              className={cn(
+                "p-0",
+                isTablet ? "w-96" : "w-80",
+                viewMode === 'spacious' && isTablet && "w-[420px]"
+              )}
+            >
               <div className="flex flex-col h-full">
                 {/* 头部 */}
                 <div className="p-4 border-b">
