@@ -27,7 +27,32 @@ export class StreamResponseParser {
 
     const results: string[] = []
     
-    // 按行分割处理
+    // 首先尝试直接解析整个块作为 JSON
+    try {
+      const jsonData = JSON.parse(chunk.trim())
+      
+      // 如果是数组，处理每个元素
+      if (Array.isArray(jsonData)) {
+        for (const item of jsonData) {
+          const textContent = this.extractTextContent(item)
+          if (textContent) {
+            results.push(textContent)
+          }
+        }
+      } else {
+        // 如果是单个对象，直接提取
+        const textContent = this.extractTextContent(jsonData)
+        if (textContent) {
+          results.push(textContent)
+        }
+      }
+      
+      return results
+    } catch (error) {
+      // 如果直接解析失败，尝试按行分割处理（SSE 格式）
+    }
+    
+    // 按行分割处理（用于 SSE 格式）
     const lines = chunk.split('\n')
     
     for (const line of lines) {
