@@ -19,8 +19,8 @@ import { fileToBase64, isSupportedFileType, isImageFile, formatFileSize, generat
 import { toast } from "sonner"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const MAX_FILES = 5
-const MAX_CHARACTERS = 4000
+const MAX_FILES = 100
+const MAX_CHARACTERS = 4000000000000000
 
 // 智能补全建议
 const SMART_SUGGESTIONS = [
