@@ -16,7 +16,7 @@ export class GeminiAPI {
   constructor(config: ApiConfig) {
     this.apiKey = config.apiKey
     this.baseUrl = config.endpointUrl || "https://generativelanguage.googleapis.com/v1beta"
-    this.streamParser = new StreamResponseParser(false) // 关闭调试模式
+    this.streamParser = new StreamResponseParser(true) // 启用调试模式来查看数据流
   }
 
   private convertMessagesToContents(messages: ChatMessage[]): GeminiContent[] {
@@ -53,6 +53,9 @@ export class GeminiAPI {
       }
     }
 
+    console.log("📤 发送请求到:", url)
+    console.log("📋 请求体:", JSON.stringify(request, null, 2))
+
     const url = `${this.baseUrl}/models/${model}:streamGenerateContent?key=${this.apiKey}`
 
     try {
@@ -88,7 +91,9 @@ export class GeminiAPI {
           if (remainingData.trim()) {
             const textChunks = this.streamParser.parseChunk(remainingData)
             for (const chunk of textChunks) {
-              yield chunk
+              if (chunk) {
+                yield chunk
+              }
             }
           }
           break
@@ -96,15 +101,27 @@ export class GeminiAPI {
 
         // 将新数据添加到缓冲区
         const chunk = decoder.decode(value, { stream: true })
+        console.log("🔍 接收数据块 (长度:", chunk.length, "):", chunk.substring(0, 100) + (chunk.length > 100 ? "..." : ""))
         responseBuffer.append(chunk)
 
         // 尝试解析完整的响应块
         const completeChunks = responseBuffer.extractCompleteChunks()
+        console.log("📦 提取完整块数量:", completeChunks.length)
 
         for (const completeChunk of completeChunks) {
+          console.log("🔧 处理块:", completeChunk.substring(0, 150) + "...")
           const textChunks = this.streamParser.parseChunk(completeChunk)
+          console.log("✅ 解析出文本块:", textChunks.length, "个:", textChunks)
+
+          // 如果有多个文本块，分别 yield 每个块来实现实时效果
           for (const textChunk of textChunks) {
-            yield textChunk
+            if (textChunk) {
+              console.log("🚀 Yielding:", textChunk.substring(0, 50) + "...")
+              yield textChunk
+
+              // 添加小延迟来模拟真实的流式效果（可选）
+              // await new Promise(resolve => setTimeout(resolve, 50))
+            }
           }
         }
       }
