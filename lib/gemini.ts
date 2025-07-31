@@ -16,7 +16,7 @@ export class GeminiAPI {
   constructor(config: ApiConfig) {
     this.apiKey = config.apiKey
     this.baseUrl = config.endpointUrl || "https://generativelanguage.googleapis.com/v1beta"
-    this.streamParser = new StreamResponseParser(false) // 可以通过配置启用调试模式
+    this.streamParser = new StreamResponseParser(true) // 启用调试模式来诊断问题
   }
 
   private convertMessagesToContents(messages: ChatMessage[]): GeminiContent[] {
@@ -85,8 +85,10 @@ export class GeminiAPI {
         if (done) {
           // 处理缓冲区中剩余的数据
           const remainingData = responseBuffer.getBuffer()
+          console.log("🏁 流结束，处理剩余数据:", remainingData.substring(0, 200) + (remainingData.length > 200 ? "..." : ""))
           if (remainingData.trim()) {
             const textChunks = this.streamParser.parseChunk(remainingData)
+            console.log("🔚 最终解析结果:", textChunks)
             for (const chunk of textChunks) {
               yield chunk
             }
@@ -96,13 +98,17 @@ export class GeminiAPI {
 
         // 将新数据添加到缓冲区
         const chunk = decoder.decode(value, { stream: true })
+        console.log("🔍 接收到数据块:", chunk.substring(0, 200) + (chunk.length > 200 ? "..." : ""))
         responseBuffer.append(chunk)
 
         // 尝试解析完整的响应块
         const completeChunks = responseBuffer.extractCompleteChunks()
+        console.log("📦 提取到完整块数量:", completeChunks.length)
 
         for (const completeChunk of completeChunks) {
+          console.log("🔧 处理完整块:", completeChunk.substring(0, 100) + "...")
           const textChunks = this.streamParser.parseChunk(completeChunk)
+          console.log("✅ 解析出文本块:", textChunks)
           for (const textChunk of textChunks) {
             yield textChunk
           }
@@ -197,7 +203,20 @@ class ResponseBuffer {
   extractCompleteChunks(): string[] {
     const chunks: string[] = []
 
-    // 按行分割
+    // 尝试解析整个缓冲区作为完整的 JSON
+    if (this.buffer.trim()) {
+      try {
+        JSON.parse(this.buffer.trim())
+        // 如果解析成功，说明是完整的 JSON
+        chunks.push(this.buffer.trim())
+        this.buffer = ""
+        return chunks
+      } catch {
+        // 如果解析失败，尝试按行分割
+      }
+    }
+
+    // 按行分割处理（用于 SSE 格式）
     const lines = this.buffer.split('\n')
 
     // 保留最后一行（可能不完整）
