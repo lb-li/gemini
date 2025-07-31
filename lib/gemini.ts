@@ -101,25 +101,36 @@ export class GeminiAPI {
         // 将新数据添加到缓冲区
         const chunk = decoder.decode(value, { stream: true })
         console.log("🔍 接收数据块 (长度:", chunk.length, "):", chunk.substring(0, 100) + (chunk.length > 100 ? "..." : ""))
-        responseBuffer.append(chunk)
 
-        // 尝试解析完整的响应块
-        const completeChunks = responseBuffer.extractCompleteChunks()
-        console.log("📦 提取完整块数量:", completeChunks.length)
+        // 尝试直接解析当前数据块
+        const immediateTextChunks = this.tryParseImmediateChunk(chunk)
 
-        for (const completeChunk of completeChunks) {
-          console.log("🔧 处理块:", completeChunk.substring(0, 150) + "...")
-          const textChunks = this.streamParser.parseChunk(completeChunk)
-          console.log("✅ 解析出文本块:", textChunks.length, "个:", textChunks)
+        if (immediateTextChunks.length > 0) {
+          console.log("⚡ 立即解析出文本块:", immediateTextChunks.length, "个:", immediateTextChunks)
 
-          // 如果有多个文本块，分别 yield 每个块来实现实时效果
-          for (const textChunk of textChunks) {
+          // 立即 yield 解析出的文本块
+          for (const textChunk of immediateTextChunks) {
             if (textChunk) {
-              console.log("🚀 Yielding:", textChunk.substring(0, 50) + "...")
+              console.log("🚀 立即 Yielding:", textChunk.substring(0, 50) + "...")
               yield textChunk
+            }
+          }
+        } else {
+          // 如果无法立即解析，使用缓冲区策略
+          responseBuffer.append(chunk)
+          const completeChunks = responseBuffer.extractCompleteChunks()
+          console.log("📦 缓冲区提取完整块数量:", completeChunks.length)
 
-              // 添加小延迟来模拟真实的流式效果（可选）
-              // await new Promise(resolve => setTimeout(resolve, 50))
+          for (const completeChunk of completeChunks) {
+            console.log("🔧 处理缓冲块:", completeChunk.substring(0, 150) + "...")
+            const textChunks = this.streamParser.parseChunk(completeChunk)
+            console.log("✅ 解析出文本块:", textChunks.length, "个:", textChunks)
+
+            for (const textChunk of textChunks) {
+              if (textChunk) {
+                console.log("🚀 缓冲 Yielding:", textChunk.substring(0, 50) + "...")
+                yield textChunk
+              }
             }
           }
         }
@@ -184,6 +195,48 @@ export class GeminiAPI {
   }
 
   /**
+   * 尝试立即解析数据块
+   * @param chunk - 刚接收到的数据块
+   * @returns 解析出的文本内容数组
+   */
+  private tryParseImmediateChunk(chunk: string): string[] {
+    const results: string[] = []
+
+    try {
+      // 尝试直接解析数据块
+      // 移除开头的逗号（如果有）
+      let cleanChunk = chunk.trim()
+      if (cleanChunk.startsWith(',')) {
+        cleanChunk = cleanChunk.substring(1)
+      }
+
+      // 如果是数组格式，提取第一个元素
+      if (cleanChunk.startsWith('[') && cleanChunk.endsWith(']')) {
+        const jsonData = JSON.parse(cleanChunk)
+        if (Array.isArray(jsonData)) {
+          for (const item of jsonData) {
+            const textContent = this.streamParser.extractTextContent(item)
+            if (textContent) {
+              results.push(textContent)
+            }
+          }
+        }
+      } else {
+        // 尝试解析单个对象
+        const jsonData = JSON.parse(cleanChunk)
+        const textContent = this.streamParser.extractTextContent(jsonData)
+        if (textContent) {
+          results.push(textContent)
+        }
+      }
+    } catch (error) {
+      // 解析失败，返回空数组
+    }
+
+    return results
+  }
+
+  /**
    * 启用或禁用调试模式
    */
   setDebugMode(enabled: boolean): void {
@@ -213,40 +266,25 @@ class ResponseBuffer {
   extractCompleteChunks(): string[] {
     const chunks: string[] = []
 
-    // 对于 Gemini API，通常返回完整的 JSON 对象
-    // 我们需要检查缓冲区是否包含完整的 JSON
-
     if (!this.buffer.trim()) {
       return chunks
     }
 
-    // 尝试解析整个缓冲区作为完整的 JSON
+    // 简化的实时解析策略：
+    // 每次收到新数据时，尝试直接解析当前缓冲区
+    // 如果解析成功，立即返回并清空缓冲区
+
     try {
-      JSON.parse(this.buffer.trim())
-      // 如果解析成功，说明是完整的 JSON
+      // 尝试解析整个缓冲区
+      const jsonData = JSON.parse(this.buffer.trim())
       chunks.push(this.buffer.trim())
       this.buffer = ""
       return chunks
     } catch (error) {
-      // 如果解析失败，可能是数据还不完整
-      // 或者是 SSE 格式，尝试按行处理
-
-      // 检查是否是 SSE 格式（包含 "data: " 前缀）
-      if (this.buffer.includes('data: ')) {
-        const lines = this.buffer.split('\n')
-        this.buffer = lines.pop() || ""
-
-        for (const line of lines) {
-          const trimmedLine = line.trim()
-          if (trimmedLine && trimmedLine !== '[DONE]') {
-            chunks.push(trimmedLine)
-          }
-        }
-      }
-      // 如果不是 SSE 格式，保持缓冲区不变，等待更多数据
+      // 如果解析失败，说明数据还不完整
+      // 保持缓冲区不变，等待更多数据
+      return chunks
     }
-
-    return chunks
   }
 
   /**
