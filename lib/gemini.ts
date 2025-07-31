@@ -16,7 +16,7 @@ export class GeminiAPI {
   constructor(config: ApiConfig) {
     this.apiKey = config.apiKey
     this.baseUrl = config.endpointUrl || "https://generativelanguage.googleapis.com/v1beta"
-    this.streamParser = new StreamResponseParser(false) // 关闭调试模式
+    this.streamParser = new StreamResponseParser(true) // 启用调试模式来诊断顺序问题
   }
 
   private convertMessagesToContents(messages: ChatMessage[]): GeminiContent[] {
@@ -87,10 +87,13 @@ export class GeminiAPI {
         if (done) {
           // 处理缓冲区中剩余的数据
           const remainingData = responseBuffer.getBuffer()
+          console.log("🏁 处理剩余数据:", remainingData.substring(0, 100) + "...")
           if (remainingData.trim()) {
             const textChunks = this.streamParser.parseChunk(remainingData)
+            console.log("🔚 最终解析结果:", textChunks)
             for (const chunk of textChunks) {
               if (chunk) {
+                console.log("🚀 最终 Yielding:", chunk.substring(0, 50) + "...")
                 yield chunk
               }
             }
@@ -101,30 +104,20 @@ export class GeminiAPI {
         // 将新数据添加到缓冲区
         const chunk = decoder.decode(value, { stream: true })
 
-        // 尝试直接解析当前数据块
-        const immediateTextChunks = this.tryParseImmediateChunk(chunk)
+        // 总是使用缓冲区策略，确保不丢失任何数据
+        responseBuffer.append(chunk)
+        const completeChunks = responseBuffer.extractCompleteChunks()
 
-        if (immediateTextChunks.length > 0) {
-          // 立即处理解析出的文本块，实现丝滑显示
-          for (const textChunk of immediateTextChunks) {
+        for (const completeChunk of completeChunks) {
+          console.log("🔧 处理完整块:", completeChunk.substring(0, 100) + "...")
+          const textChunks = this.streamParser.parseChunk(completeChunk)
+          console.log("✅ 解析出文本块:", textChunks.length, "个:", textChunks)
+
+          for (const textChunk of textChunks) {
             if (textChunk) {
-              // 将大块文本分解成更小的片段，实现更丝滑的显示效果
-              yield* this.createSmoothTextStream(textChunk)
-            }
-          }
-        } else {
-          // 如果无法立即解析，使用缓冲区策略
-          responseBuffer.append(chunk)
-          const completeChunks = responseBuffer.extractCompleteChunks()
-
-          for (const completeChunk of completeChunks) {
-            const textChunks = this.streamParser.parseChunk(completeChunk)
-
-            for (const textChunk of textChunks) {
-              if (textChunk) {
-                // 同样实现丝滑显示
-                yield* this.createSmoothTextStream(textChunk)
-              }
+              console.log("🚀 Yielding:", textChunk.substring(0, 50) + "...")
+              // 直接 yield 文本块，不进行额外分割以避免丢失数据
+              yield textChunk
             }
           }
         }
@@ -188,153 +181,7 @@ export class GeminiAPI {
     }
   }
 
-  /**
-   * 创建丝滑的文本流式显示效果
-   * @param text - 要显示的文本
-   * @returns 异步生成器，产生文本片段
-   */
-  private async *createSmoothTextStream(text: string): AsyncGenerator<string, void, unknown> {
-    if (!text) return
 
-    // 按照自然的语言边界分割文本，而不是简单的字符分割
-    const chunks = this.splitTextNaturally(text)
-    
-    for (const chunk of chunks) {
-      yield chunk
-      
-      // 添加自然的延迟，模拟真实的打字效果
-      // 延迟时间根据文本长度动态调整
-      const delay = this.calculateDelay(chunk)
-      if (delay > 0) {
-        await new Promise(resolve => setTimeout(resolve, delay))
-      }
-    }
-  }
-
-  /**
-   * 按照自然的语言边界分割文本
-   * @param text - 要分割的文本
-   * @returns 文本片段数组
-   */
-  private splitTextNaturally(text: string): string[] {
-    const chunks: string[] = []
-    
-    // 如果文本较短，直接返回
-    if (text.length <= 30) {
-      return [text]
-    }
-    
-    // 快速分割策略：使用更大的块，减少分割次数
-    let remainingText = text
-    
-    while (remainingText.length > 0) {
-      let chunkEnd = -1
-      
-      // 寻找合适的分割点，使用更大的块
-      if (remainingText.length <= 60) {
-        // 中等长度文本直接使用
-        chunks.push(remainingText)
-        break
-      } else {
-        // 寻找句子结束点（更大范围）
-        const sentenceEnd = remainingText.search(/[。！？\.\!\?]/g)
-        if (sentenceEnd !== -1 && sentenceEnd <= 80) {
-          chunkEnd = sentenceEnd + 1
-        } else {
-          // 寻找逗号分割点（更大范围）
-          const commaEnd = remainingText.search(/[，,；;]/g)
-          if (commaEnd !== -1 && commaEnd <= 70) {
-            chunkEnd = commaEnd + 1
-          } else {
-            // 寻找空格分割点（更大范围）
-            const spaceEnd = remainingText.indexOf(' ', 40)
-            if (spaceEnd !== -1 && spaceEnd <= 60) {
-              chunkEnd = spaceEnd + 1
-            } else {
-              // 更大的固定长度分割
-              chunkEnd = Math.min(50, remainingText.length)
-            }
-          }
-        }
-      }
-      
-      if (chunkEnd > 0) {
-        const chunk = remainingText.substring(0, chunkEnd).trim()
-        if (chunk) {
-          chunks.push(chunk)
-        }
-        remainingText = remainingText.substring(chunkEnd).trim()
-      } else {
-        // 安全退出
-        if (remainingText.trim()) {
-          chunks.push(remainingText.trim())
-        }
-        break
-      }
-    }
-    
-    return chunks.filter(chunk => chunk.length > 0)
-  }
-
-  /**
-   * 计算延迟时间，创建自然的打字节奏
-   * @param chunk - 文本片段
-   * @returns 延迟时间（毫秒）
-   */
-  private calculateDelay(chunk: string): number {
-    // 极短的延迟，保持快速响应
-    const baseDelay = 5
-    
-    // 最小的长度因子
-    const lengthFactor = Math.min(chunk.length * 0.5, 10)
-    
-    // 句子结束时的短暂停顿
-    const punctuationDelay = /[。！？\.\!\?]/.test(chunk) ? 20 : 0
-    
-    return baseDelay + lengthFactor + punctuationDelay
-  }
-
-  /**
-   * 尝试立即解析数据块
-   * @param chunk - 刚接收到的数据块
-   * @returns 解析出的文本内容数组
-   */
-  private tryParseImmediateChunk(chunk: string): string[] {
-    const results: string[] = []
-
-    try {
-      // 尝试直接解析数据块
-      // 移除开头的逗号（如果有）
-      let cleanChunk = chunk.trim()
-      if (cleanChunk.startsWith(',')) {
-        cleanChunk = cleanChunk.substring(1)
-      }
-
-      // 如果是数组格式，提取第一个元素
-      if (cleanChunk.startsWith('[') && cleanChunk.endsWith(']')) {
-        const jsonData = JSON.parse(cleanChunk)
-        if (Array.isArray(jsonData)) {
-          for (const item of jsonData) {
-            const textContent = this.streamParser.extractTextContent(item)
-            if (textContent) {
-              results.push(textContent)
-            }
-          }
-        }
-      } else {
-        // 尝试解析单个对象
-        const jsonData = JSON.parse(cleanChunk)
-        const textContent = this.streamParser.extractTextContent(jsonData)
-        if (textContent) {
-          results.push(textContent)
-        }
-      }
-    } catch (error) {
-      // 解析失败，返回空数组
-    }
-
-    return results
-  }
 
   /**
    * 启用或禁用调试模式
