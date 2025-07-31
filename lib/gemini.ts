@@ -16,7 +16,7 @@ export class GeminiAPI {
   constructor(config: ApiConfig) {
     this.apiKey = config.apiKey
     this.baseUrl = config.endpointUrl || "https://generativelanguage.googleapis.com/v1beta"
-    this.streamParser = new StreamResponseParser(true) // 启用调试模式来诊断顺序问题
+    this.streamParser = new StreamResponseParser(false) // 关闭调试模式
   }
 
   private convertMessagesToContents(messages: ChatMessage[]): GeminiContent[] {
@@ -87,13 +87,10 @@ export class GeminiAPI {
         if (done) {
           // 处理缓冲区中剩余的数据
           const remainingData = responseBuffer.getBuffer()
-          console.log("🏁 处理剩余数据:", remainingData.substring(0, 100) + "...")
           if (remainingData.trim()) {
             const textChunks = this.streamParser.parseChunk(remainingData)
-            console.log("🔚 最终解析结果:", textChunks)
             for (const chunk of textChunks) {
               if (chunk) {
-                console.log("🚀 最终 Yielding:", chunk.substring(0, 50) + "...")
                 yield chunk
               }
             }
@@ -109,13 +106,10 @@ export class GeminiAPI {
         const completeChunks = responseBuffer.extractCompleteChunks()
 
         for (const completeChunk of completeChunks) {
-          console.log("🔧 处理完整块:", completeChunk.substring(0, 100) + "...")
           const textChunks = this.streamParser.parseChunk(completeChunk)
-          console.log("✅ 解析出文本块:", textChunks.length, "个:", textChunks)
 
           for (const textChunk of textChunks) {
             if (textChunk) {
-              console.log("🚀 Yielding:", textChunk.substring(0, 50) + "...")
               // 直接 yield 文本块，不进行额外分割以避免丢失数据
               yield textChunk
             }

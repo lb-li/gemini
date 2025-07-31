@@ -181,11 +181,12 @@ export function MessageInput() {
 
       // 处理流式响应
       for await (const chunk of stream) {
-        console.log(`📝 接收文本块 ${chunkIndex++}:`, `"${chunk}"`)
         responseContent += chunk
-        console.log(`📄 累积内容:`, `"${responseContent.substring(0, 100)}${responseContent.length > 100 ? '...' : ''}"`)
         // 实时更新消息内容
         updateStreamingMessage(aiMessage.id, responseContent)
+        
+        // 添加微小延迟确保 UI 有时间更新
+        await new Promise(resolve => setTimeout(resolve, 10))
       }
 
       // 流式响应完成后，更新数据库
