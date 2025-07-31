@@ -2,7 +2,18 @@ export interface ChatSession {
   id: number
   title: string
   createdAt: Date
+  updatedAt?: Date
   model: string
+  messageCount?: number
+  status?: 'active' | 'archived' | 'deleted'
+  tags?: string[]
+  priority?: 'low' | 'normal' | 'high'
+  category?: string
+  metadata?: {
+    totalTokens?: number
+    avgResponseTime?: number
+    lastActivity?: Date
+  }
 }
 
 export interface ChatMessage {

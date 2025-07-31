@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Bot, User } from "lucide-react"
+import { EnterpriseIcon } from "@/components/icons/icon-component"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MessageBubble } from "@/components/message-bubble"
@@ -80,19 +81,31 @@ export function ChatView() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div className="p-3 md:p-4 rounded-lg border bg-card">
-              <h3 className="font-medium mb-1 md:mb-2 text-sm md:text-base">💬 智能对话</h3>
+              <div className="flex items-center gap-2 mb-1 md:mb-2">
+                <EnterpriseIcon name="chat" size="sm" variant="primary" />
+                <h3 className="font-medium text-sm md:text-base">智能对话</h3>
+              </div>
               <p className="text-xs md:text-sm text-muted-foreground">与 Gemini AI 进行自然对话，获得智能回答</p>
             </div>
             <div className="p-3 md:p-4 rounded-lg border bg-card">
-              <h3 className="font-medium mb-1 md:mb-2 text-sm md:text-base">🖼️ 图片分析</h3>
+              <div className="flex items-center gap-2 mb-1 md:mb-2">
+                <EnterpriseIcon name="image" size="sm" variant="primary" />
+                <h3 className="font-medium text-sm md:text-base">图片分析</h3>
+              </div>
               <p className="text-xs md:text-sm text-muted-foreground">上传图片让 AI 分析内容和回答相关问题</p>
             </div>
             <div className="p-3 md:p-4 rounded-lg border bg-card">
-              <h3 className="font-medium mb-1 md:mb-2 text-sm md:text-base">📄 文档处理</h3>
+              <div className="flex items-center gap-2 mb-1 md:mb-2">
+                <EnterpriseIcon name="document" size="sm" variant="primary" />
+                <h3 className="font-medium text-sm md:text-base">文档处理</h3>
+              </div>
               <p className="text-xs md:text-sm text-muted-foreground">上传文档让 AI 帮助分析和总结内容</p>
             </div>
             <div className="p-3 md:p-4 rounded-lg border bg-card">
-              <h3 className="font-medium mb-1 md:mb-2 text-sm md:text-base">🔄 多模态交互</h3>
+              <div className="flex items-center gap-2 mb-1 md:mb-2">
+                <EnterpriseIcon name="refresh" size="sm" variant="primary" />
+                <h3 className="font-medium text-sm md:text-base">多模态交互</h3>
+              </div>
               <p className="text-xs md:text-sm text-muted-foreground">同时使用文本、图片和文件进行复合交互</p>
             </div>
           </div>
