@@ -1,13 +1,22 @@
-import type { GeminiRequest, GeminiContent, ChatMessage, ApiConfig } from "@/types"
+import type { 
+  GeminiRequest, 
+  GeminiContent, 
+  ChatMessage, 
+  ApiConfig, 
+  StreamGenerateContentOptions 
+} from "../types"
+import { StreamResponseParser } from "./stream-parser"
 
 export class GeminiAPI {
   private apiKey: string
   private baseUrl: string
   private abortController: AbortController | null = null
+  private streamParser: StreamResponseParser
 
   constructor(config: ApiConfig) {
     this.apiKey = config.apiKey
     this.baseUrl = config.endpointUrl || "https://generativelanguage.googleapis.com/v1beta"
+    this.streamParser = new StreamResponseParser(false) // 可以通过配置启用调试模式
   }
 
   private convertMessagesToContents(messages: ChatMessage[]): GeminiContent[] {
@@ -27,15 +36,21 @@ export class GeminiAPI {
 
   async *streamGenerateContent(
     messages: ChatMessage[],
-    model = "gemini-1.5-pro-latest",
+    options: StreamGenerateContentOptions = {}
   ): AsyncGenerator<string, void, unknown> {
     this.abortController = new AbortController()
 
     const contents = this.convertMessagesToContents(messages)
+    const model = options.model || "gemini-1.5-pro-latest"
 
     const request: GeminiRequest = {
       contents,
-     
+      generationConfig: {
+        temperature: options.temperature,
+        topK: options.topK,
+        topP: options.topP,
+        maxOutputTokens: options.maxOutputTokens,
+      }
     }
 
     const url = `${this.baseUrl}/models/${model}:streamGenerateContent?key=${this.apiKey}`
@@ -60,34 +75,36 @@ export class GeminiAPI {
         throw new Error("无法读取响应流")
       }
 
+      // 使用改进的响应缓冲区管理
+      const responseBuffer = new ResponseBuffer()
       const decoder = new TextDecoder()
-      let buffer = ""
 
       while (true) {
         const { done, value } = await reader.read()
 
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split("\n")
-        buffer = lines.pop() || ""
-
-        for (const line of lines) {
-          if (line.trim() === "") continue
-
-          try {
-            // 移除可能的 "data: " 前缀
-            const jsonStr = line.replace(/^data:\s*/, "").trim()
-            if (!jsonStr || jsonStr === "[DONE]") continue
-
-            const data = JSON.parse(jsonStr)
-
-            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-              yield data.candidates[0].content.parts[0].text
+        if (done) {
+          // 处理缓冲区中剩余的数据
+          const remainingData = responseBuffer.getBuffer()
+          if (remainingData.trim()) {
+            const textChunks = this.streamParser.parseChunk(remainingData)
+            for (const chunk of textChunks) {
+              yield chunk
             }
-          } catch (e) {
-            // 忽略解析错误，继续处理下一行
-            console.warn("解析响应行时出错:", e)
+          }
+          break
+        }
+
+        // 将新数据添加到缓冲区
+        const chunk = decoder.decode(value, { stream: true })
+        responseBuffer.append(chunk)
+
+        // 尝试解析完整的响应块
+        const completeChunks = responseBuffer.extractCompleteChunks()
+        
+        for (const completeChunk of completeChunks) {
+          const textChunks = this.streamParser.parseChunk(completeChunk)
+          for (const textChunk of textChunks) {
+            yield textChunk
           }
         }
       }
@@ -148,5 +165,72 @@ export class GeminiAPI {
         { id: "gemini-1.5-flash-latest", name: "gemini-1.5-flash-latest", displayName: "Gemini 1.5 Flash" },
       ]
     }
+  }
+
+  /**
+   * 启用或禁用调试模式
+   */
+  setDebugMode(enabled: boolean): void {
+    this.streamParser.setDebugMode(enabled)
+  }
+}
+
+/**
+ * ResponseBuffer - 用于管理流式响应数据的缓冲区
+ * 
+ * 处理不完整的 JSON 数据块，确保只解析完整的响应
+ */
+class ResponseBuffer {
+  private buffer: string = ""
+
+  /**
+   * 向缓冲区添加新数据
+   */
+  append(chunk: string): void {
+    this.buffer += chunk
+  }
+
+  /**
+   * 提取完整的数据块
+   * 返回可以解析的完整数据块数组，保留不完整的数据在缓冲区中
+   */
+  extractCompleteChunks(): string[] {
+    const chunks: string[] = []
+    
+    // 按行分割
+    const lines = this.buffer.split('\n')
+    
+    // 保留最后一行（可能不完整）
+    this.buffer = lines.pop() || ""
+    
+    // 返回完整的行
+    for (const line of lines) {
+      if (line.trim()) {
+        chunks.push(line)
+      }
+    }
+    
+    return chunks
+  }
+
+  /**
+   * 获取当前缓冲区内容
+   */
+  getBuffer(): string {
+    return this.buffer
+  }
+
+  /**
+   * 清空缓冲区
+   */
+  clear(): void {
+    this.buffer = ""
+  }
+
+  /**
+   * 检查缓冲区是否为空
+   */
+  isEmpty(): boolean {
+    return this.buffer.trim() === ""
   }
 }

@@ -15,11 +15,13 @@
 - [ ] 2. Implement StreamResponseParser utility class
   - Create parser class to handle JSON response chunks
   - Implement extractTextContent method for text extraction
+
   - Add error handling for malformed JSON responses
   - Write unit tests for parser functionality
   - _Requirements: 1.1, 1.2, 3.2_
 
-- [ ] 3. Refactor GeminiAPI streamGenerateContent method
+- [x] 3. Refactor GeminiAPI streamGenerateContent method
+
   - Update streaming logic to handle JSON array responses
   - Replace line-by-line parsing with proper JSON parsing
   - Implement buffer management for incomplete responses
