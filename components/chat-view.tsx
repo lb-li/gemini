@@ -68,7 +68,11 @@ export function ChatView() {
           className="text-center max-w-2xl"
         >
           <div className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-            <EnterpriseIcon name="ai" size="lg" variant="primary" />
+            <img
+              src="/ai-icon.png"
+              alt="AI Assistant"
+              className="w-8 h-8 md:w-12 md:h-12 object-contain"
+            />
           </div>
           <h2 className="text-xl md:text-2xl font-semibold mb-2">欢迎使用 康雷云AI</h2>
           <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base">
@@ -128,7 +132,11 @@ export function ChatView() {
         <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <EnterpriseIcon name="ai" size="sm" variant="primary" />
+              <img
+                src="/ai-icon.png"
+                alt="AI Assistant"
+                className="w-4 h-4 object-contain"
+              />
             </div>
             <div>
               <h2 className="font-semibold">{currentSession?.title || "新对话"}</h2>
