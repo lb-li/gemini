@@ -78,17 +78,60 @@ export const AIAssistantIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) 
   <svg
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
     {...props}
   >
-    <circle cx="12" cy="12" r="3" />
-    <path d="M12 1v6m0 6v6" />
-    <path d="m9 9 3 3 3-3" />
-    <path d="M9 21h6" />
-    <path d="M12 3C8 3 5 6 5 10v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4c0-4-3-7-7-7Z" />
+    {/* Hexagonal base structure */}
+    <path
+      d="M6 4.5L12 1.5L18 4.5V10.5L12 13.5L6 10.5V4.5Z"
+      fill="currentColor"
+      opacity="0.8"
+    />
+    
+    {/* Inner hexagon */}
+    <path
+      d="M8 6L12 4L16 6V10L12 12L8 10V6Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    
+    {/* Central square element */}
+    <rect
+      x="10"
+      y="8"
+      width="4"
+      height="4"
+      fill="#FFD700"
+      rx="0.5"
+    />
+    
+    {/* Decorative elements - representing the colorful parts */}
+    <ellipse
+      cx="16"
+      cy="7"
+      rx="3"
+      ry="2"
+      fill="#FFA500"
+      opacity="0.7"
+      transform="rotate(30 16 7)"
+    />
+    
+    <ellipse
+      cx="15"
+      cy="5"
+      rx="2.5"
+      ry="1.5"
+      fill="#FFD700"
+      opacity="0.8"
+      transform="rotate(45 15 5)"
+    />
+    
+    {/* Bottom extension */}
+    <path
+      d="M10 13L12 15L14 13V17L12 19L10 17V13Z"
+      fill="currentColor"
+      opacity="0.6"
+    />
   </svg>
 )
 
@@ -339,6 +382,10 @@ export const IconMap = {
   analytics: DataAnalysisIcon,
   chart: BarChart3,
   statistics: StatisticsIcon,
+  
+  // AI & Assistant
+  ai: AIAssistantIcon,
+  assistant: AIAssistantIcon,
   
   // System
   light: Sun,

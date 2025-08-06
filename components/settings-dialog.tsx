@@ -110,7 +110,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       <SheetContent className="w-[400px] sm:w-[540px]">
         <SheetHeader>
           <SheetTitle>设置</SheetTitle>
-          <SheetDescription>配置 Gemini AI API 连接参数</SheetDescription>
+          <SheetDescription>配置 康雷云AI API 连接参数</SheetDescription>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-6">
@@ -132,16 +132,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             />
             {errors.apiKey && <p className="text-sm text-destructive">{errors.apiKey.message}</p>}
             <p className="text-xs text-muted-foreground">
-              您可以在{" "}
-              <a
-                href="https://makersuite.google.com/app/apikey"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Google AI Studio
-              </a>{" "}
-              获取 API Key
+             
             </p>
           </div>
 

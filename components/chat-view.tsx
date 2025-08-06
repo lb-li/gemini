@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react"
 import { motion } from "framer-motion"
-import { Bot, User, Search, Filter, BarChart3, Clock, MessageSquare, Zap, Tag, X } from "lucide-react"
+import { User, Search, Filter, BarChart3, Clock, MessageSquare, Zap, Tag, X } from "lucide-react"
 import { EnterpriseIcon } from "@/components/icons/icon-component"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -68,23 +68,23 @@ export function ChatView() {
           className="text-center max-w-2xl"
         >
           <div className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-            <Bot className="w-8 h-8 md:w-12 md:h-12 text-primary" />
+            <EnterpriseIcon name="ai" size="lg" variant="primary" />
           </div>
-          <h2 className="text-xl md:text-2xl font-semibold mb-2">欢迎使用 Gemini AI</h2>
+          <h2 className="text-xl md:text-2xl font-semibold mb-2">欢迎使用 康雷云AI</h2>
           <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base">
             {isMobile ? "点击左上角菜单创建新对话开始聊天" : "选择左侧的对话或创建新对话开始聊天"}
             。支持文本、图片和文件上传。
           </p>
 
           {/* 显示当前默认模型 */}
-          <div className="mb-4 md:mb-6 p-3 bg-muted/50 rounded-lg">
+          {/* <div className="mb-4 md:mb-6 p-3 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
               默认模型:{" "}
               <span className="font-medium text-foreground">
                 {availableModels.find((m) => m.id === preferredModel)?.displayName || preferredModel}
               </span>
             </p>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div className="p-3 md:p-4 rounded-lg border bg-card">
@@ -92,7 +92,7 @@ export function ChatView() {
                 <EnterpriseIcon name="chat" size="sm" variant="primary" />
                 <h3 className="font-medium text-sm md:text-base">智能对话</h3>
               </div>
-              <p className="text-xs md:text-sm text-muted-foreground">与 Gemini AI 进行自然对话，获得智能回答</p>
+              <p className="text-xs md:text-sm text-muted-foreground">与 康雷云AI 进行自然对话，获得智能回答</p>
             </div>
             <div className="p-3 md:p-4 rounded-lg border bg-card">
               <div className="flex items-center gap-2 mb-1 md:mb-2">
@@ -128,7 +128,7 @@ export function ChatView() {
         <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-primary" />
+              <EnterpriseIcon name="ai" size="sm" variant="primary" />
             </div>
             <div>
               <h2 className="font-semibold">{currentSession?.title || "新对话"}</h2>
