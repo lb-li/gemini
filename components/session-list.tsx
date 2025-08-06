@@ -230,7 +230,7 @@ export function SessionList({ collapsed = false }: SessionListProps) {
         {!collapsed ? (
           <>
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-lg font-semibold">Gemini AI</h1>
+              <h1 className="text-lg font-semibold">康雷云AI</h1>
               <div className="flex items-center gap-2">
                 <ThemeToggle />
                 <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} aria-label="设置">

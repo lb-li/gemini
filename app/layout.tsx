@@ -8,9 +8,14 @@ import { Toaster } from "sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Gemini AI 聊天平台",
-  description: "基于 Gemini AI 的智能聊天平台，支持多模态输入",
-    generator: 'v0.dev'
+  title: "康雷云AI 聊天平台",
+  description: "基于康雷云AI的智能聊天平台，支持多模态输入",
+  // generator: 'v0.dev',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({
