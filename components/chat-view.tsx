@@ -144,7 +144,7 @@ export function ChatView() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">模型:</span>
             <Select value={currentSession?.model || preferredModel} onValueChange={handleModelChange}>
               <SelectTrigger className="w-48">
@@ -159,7 +159,7 @@ export function ChatView() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
         </div>
       )}
 
